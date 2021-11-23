@@ -3,14 +3,15 @@
 #include <regex>
 
 
+
 template<typename T>
 class Token {
 public:
-	T m_data{};
+	T m_data;
+	Token(T t) : m_data(t) {};
 };
+
 class Tree {
-
-
 	template<typename T>
 	class Node {
 	public:
@@ -25,7 +26,7 @@ public:
 	std::string getVarName(std::string::iterator it, std::string& expression) {
 		std::string validSet{ "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" };
 		std::string::iterator itEnd = std::find_if(it, expression.end(), [validSet, expression](char& c) {
-			return validSet.find(c) != expression.npos;
+			return validSet.find(c) == expression.npos;
 			}
 		);
 		std::string name{ it, itEnd };
@@ -40,33 +41,26 @@ public:
 	bool isDigit(char ch) {
 		return (ch > 47 && ch < 58) || ch == '.';
 	}
-	Token<double> getDigit(std::string::iterator it, std::string& expression) {
+	double getDigit(std::string::iterator it, std::string& expression) {
 		std::string validSet{ "0123456789." };
-		size_t strEnd = expression.find_first_not_of(validSet, end(expression));
-
-		if (strEnd == expression.npos) {
-			strEnd = expression.length();
-		}
-		std::string name{ expression.substr(it, strEnd - it) };
-
+		std::string::iterator itEnd = std::find_if(it, expression.end(), [validSet, expression](char& c) {
+			return validSet.find(c) == expression.npos;
+			}
+		);
+		std::string name{ it, itEnd };
 		std::regex twoDots("\.*\\.[0-9]*\\.");
 		std::smatch m;
 		if (name == "." || std::regex_search(name, m, twoDots)) {
 			throw std::exception("[ERROR] [invalid input] invalid point in number");
 		}
-		for (auto x : name) {
-			if (!((x > 47 && x < 58) || (x == '.'))) {
-				std::cout << "\"" << x << "\" in token \"" << name << "\"" << std::endl;
-				throw std::exception("[ERROR] Calculator::getDigit NOT a digit");
-			}
-		}
-		return Token(name, Type::NUM);
+		return std::stod(name);
 	}
 	template<typename T>
 	void tokenize(std::string& expression) {
 		auto it{ expression.begin() };
+		
 		while (it != expression.end()) {
-			std::vector<Token> tokens;
+			std::vector<Token<T>> tokens;
 			int operCounter{ 0 };
 			int bracketCounter{ 0 };
 			if (*it== ' ' || *it == '	') {
@@ -74,11 +68,11 @@ public:
 				continue;
 			}
 			if (isChar(*it)) {
-				tokens.push_back(getVarName(it));
+				tokens.push_back(Token(getVarName(it, expression)));
 				++operCounter;
 			}
 			else if (isDigit(*it)) {
-				tokens.push_back(getDigit(it));
+				(Token(getDigit(it, expression)));
 				++operCounter;
 			}
 			//else if (isOper(*it)) {
@@ -129,7 +123,7 @@ public:
 
 int main() {
 	Tree tree;
-	std::string input{ "((3 + 4 - 1) * 5 + 6 * -7) / 2" };
+	std::string input{ "2 + 1" };
 	
 	tree.tokenize<Token<std::string>>(input);
 
